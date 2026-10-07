@@ -326,7 +326,7 @@ def recording_stop():
 
 if __name__ == "__main__":
     print("Starting iPhone Screen Mirror...")
-    print("Make sure tunneld is running: sudo pymobiledevice3 tunneld start")
+    print("Make sure tunneld is running: sudo /path/to/venv/bin/pymobiledevice3 remote tunneld")
     print()
     _start_async_loop()
     print(f"Open http://localhost:{FLASK_PORT} in your browser")

@@ -27,7 +27,7 @@ fi
 
 echo "Starting iOS-remote..."
 echo "1. Start pymobiledevice3 tunnel (run in separate terminal with sudo):"
-echo "   sudo pymobiledevice3 tunneld start"
+echo "   sudo /home/intrealer/iOS-remote/venv/bin/pymobiledevice3 remote tunneld"
 echo "2. Web UI will be available at: http://localhost:5000"
 echo ""
 

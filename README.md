@@ -16,7 +16,7 @@ Uses pymobiledevice3's native iOS 17+ CoreDevice services over USB. Works entire
 
 ```bash
 # Terminal 1: start the USB tunnel (needs sudo)
-sudo pymobiledevice3 tunneld start
+sudo /path/to/ios-remote-linux/venv/bin/pymobiledevice3 remote tunneld
 
 # Terminal 2: run the app
 ./start.sh
