@@ -5,59 +5,90 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iOS Remote</title>
+    <title>iOS Screen Mirror</title>
     <link href="static/css/bootstrap.min.css" rel="stylesheet">
-    <script src="static/js/jquery.min.js"> </script>
+    <script src="static/js/jquery.min.js"></script>
     <script src="static/js/index.js"></script>
+    <style>
+        body { background: #1a1a2e; color: #eee; }
+        .navbar { background: #16213e; border: none; }
+        .navbar-brand { color: #e94560 !important; font-weight: bold; }
+        #viewer-frame {
+            width: 100%;
+            height: 80vh;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: #000;
+        }
+        .btn { border-radius: 20px; margin-bottom: 8px; font-weight: bold; }
+        .btn-lock { background: #e94560; color: #fff; border: none; }
+        .btn-home { background: #0f3460; color: #fff; border: none; }
+        .btn-rotation { background: #533483; color: #fff; border: none; }
+        .btn-screenshot { background: #16813d; color: #fff; border: none; }
+        .btn-record { background: #e94560; color: #fff; border: none; }
+        .btn-stop-record { background: #c0392b; color: #fff; border: none; }
+        .btn-volume-up, .btn-volume-down { background: #0f3460; color: #fff; border: none; }
+        .btn-mute { background: #533483; color: #fff; border: none; }
+        .control-panel { padding: 15px; }
+        .control-panel hr { border-color: #444; }
+        #status-badge { font-size: 12px; padding: 4px 10px; border-radius: 10px; }
+        .connected { background: #16813d; color: #fff; }
+        .disconnected { background: #e94560; color: #fff; }
+        textarea { background: #16213e; color: #eee; border: 1px solid #333; border-radius: 6px; }
+        #size-range { width: 100%; }
+    </style>
 </head>
 
 <body>
-<div class="container">
+<div class="container-fluid">
     <div class="row clearfix">
         <div class="col-md-12 column">
-            <nav class="navbar navbar-default" role="navigation">
+            <nav class="navbar" role="navigation">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">iOS Remote</a>
+                    <a class="navbar-brand" href="#">iOS Screen Mirror</a>
                 </div>
-                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                    <form class="navbar-form navbar-left" role="search">
-                        <div class="form-group">
-                            <input type="text" class="form-control" id="connect-input"
-                                   placeholder="Local Port" value="8200"/>
-                        </div>
-                        <button type="button" class="btn btn-default" id="connect-stream"
-                                href="#">Connect&#128279;</button>
-                        <button type="button" class="btn btn-default" id="refresh"
-                                href="#" onclick="javascript:location.reload();">Refresh&#128075;</button>
-                    </form>
+                <div class="nav navbar-nav" style="margin-top: 12px; margin-left: 15px;">
+                    <span id="status-badge" class="disconnected">Checking...</span>
+                </div>
+                <div class="nav navbar-nav navbar-right" style="margin-top: 10px; margin-right: 10px;">
+                    <button type="button" class="btn btn-sm btn-default" id="refresh"
+                            onclick="location.reload();">Refresh</button>
                 </div>
             </nav>
         </div>
     </div>
     <div class="row clearfix">
-        <div class="col-md-10 column">
-            <img alt="No Source Please Check!" id="remote" src="http://127.0.0.1:8200" class="img-rounded"
-                 style="width: 50%; height: 50%;"/>
+        <div class="col-md-9 column">
+            <iframe id="viewer-frame" src="http://{{ stream_url }}/" allow="autoplay; fullscreen"
+                    sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
         </div>
-        <div class="col-md-2 column">
-            <button type="button" class="btn btn-lg btn-block lock">Lock &#128275;</button>
-            <button type="button" class="btn btn-lg btn-block home">Home &#127968;</button>
-            <button type="button" class="btn btn-lg btn-block rotation">Rotation &#128260;</button>
-            <button type="button" class="btn btn-lg btn-block screenshot">Screenshot &#128248;</button>
-            <button type="button" class="btn btn-lg btn-block reboot">Reboot &#10071;</button>
+        <div class="col-md-3 column control-panel">
+            <button type="button" class="btn btn-lg btn-block btn-lock lock">Lock</button>
+            <button type="button" class="btn btn-lg btn-block btn-home home">Home</button>
+            <button type="button" class="btn btn-lg btn-block btn-rotation rotation">Rotate</button>
+            <hr>
+            <button type="button" class="btn btn-block btn-volume-up volume-up">Vol +</button>
+            <button type="button" class="btn btn-block btn-volume-down volume-down">Vol -</button>
+            <button type="button" class="btn btn-block btn-mute mute">Mute</button>
+            <hr>
+            <button type="button" class="btn btn-lg btn-block btn-screenshot screenshot">Screenshot</button>
+            <hr>
+            <button type="button" class="btn btn-lg btn-block btn-record record">Record</button>
+            <button type="button" class="btn btn-lg btn-block btn-stop-record stop-record" style="display:none;">Stop Recording</button>
             <hr>
             <form role="form">
                 <div class="form-group">
-                    <label for="exampleInputEmail1">Send keys &#9997;</label>
-                    <textarea id="main-send" cols="20" rows="5"></textarea>
-                    <p class="help-block">Press [Ctrl+Enter] to send; [Ctrl+Backspace] to delete; [Shift+Enter] to
-                        insert a newline;</p>
+                    <label>Send text</label>
+                    <textarea id="main-send" cols="20" rows="4" placeholder="Type here..."></textarea>
+                    <p class="help-block" style="color:#888; font-size:11px;">
+                        Ctrl+Enter to send
+                    </p>
                 </div>
             </form>
             <hr>
-            <label for="resize" id="resize">Resize Source &#127899;</label>
-            <input type="range" id="size-range">
-            <p class="help-block" id="size-value">Source Size: 50%</p>
+            <label for="size-range">Viewer size</label>
+            <input type="range" id="size-range" min="30" max="100" value="100">
+            <p class="help-block" id="size-value" style="color:#888;">100%</p>
         </div>
     </div>
 </div>

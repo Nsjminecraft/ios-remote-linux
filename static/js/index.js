@@ -1,157 +1,92 @@
 window.onload = function () {
-    var div1 = document.getElementById("remote");
-    var disX = disY = 0;
-
-    div1.onmousedown = function (e) {
-        var evnt = e || event;
-        var eleH = div1.offsetHeight;
-        var eleW = div1.offsetWidth;
-        console.log('H: ' + eleH + ' W:' + eleW)
-        disX = evnt.offsetX - div1.offsetLeft;
-        disY = evnt.offsetY - div1.offsetTop;
-
-        div1.onmousemove = function (e) {
-            var evnt = e || event;
-            var x = evnt.offsetX - div1.offsetLeft;
-            var y = evnt.offsetY - div1.offsetTop;
-
-            div1.onmouseup = function () {
-                if (x || y) {
-                    var data = {
-                        data: JSON.stringify({
-                            'disX': (disX / eleW).toFixed(2),
-                            'disY': (disY / eleH).toFixed(2),
-                            'toX': (x / eleW).toFixed(2),
-                            'toY': (y / eleH).toFixed(2)
-                        }),
-                    }
-                    console.log('drag: ' + disX + ' , ' + disY + ' to: ' + x + ' , ' + y)
-                    $.ajax({
-                        url: 'http://localhost:5000/drag',
-                        type: 'POST',
-                        data: data,
-                        dataType: 'json',
-                    })
-                }
-                div1.onmousemove = null;
-                div1.onmouup = null;
-            };
-        };
-
-        div1.onmouseup = function () {
-            if (disX || disY) {
-                var data = {
-                    data: JSON.stringify({
-                        'disX': (disX / eleW).toFixed(2),
-                        'disY': (disY / eleH).toFixed(2)
-                    }),
-                }
-                console.log('click: ' + disX + ' , ' + disY)
-                $.ajax({
-                    url: 'http://localhost:5000/click',
-                    type: 'POST',
-                    data: data,
-                    dataType: 'json',
-                })
+    // Status check
+    function checkStatus() {
+        $.getJSON('/status', function (data) {
+            var badge = $('#status-badge');
+            if (data.connected) {
+                badge.text('Connected: ' + (data.device || 'iPhone'));
+                badge.removeClass('disconnected').addClass('connected');
+            } else {
+                badge.text('Disconnected');
+                badge.removeClass('connected').addClass('disconnected');
             }
-            div1.onmousemove = null;
-            div1.onmouup = null;
-        };
-
-        return false;
-    };
-    $("#main-send").focus(function () {
-        $("#main-send").keydown(function (e) {
-            if (e.keyCode == 13 && e.ctrlKey == 1) {
-                console.log('ctrl+enter!!!');
-                var content = $("#main-send").val();
-                var data = {
-                    data: JSON.stringify({
-                        'text': content,
-                    }),
-                };
-                console.log('send: ' + content);
-                $.ajax({
-                    url: 'http://localhost:5000/send',
-                    type: 'POST',
-                    data: data,
-                    dataType: 'json',
-                });
-                $("#main-send").val("");
-            };
-            if (e.keyCode == 8 && e.ctrlKey == 1) {
-                console.log('backspace!!!');
-                $.ajax({
-                    url: 'http://localhost:5000/backspace',
-                    type: 'POST',
-                });
-            };
-            if (e.keyCode == 13 && e.shiftKey == 1) {
-                console.log('enter!!!');
-                $.ajax({
-                    url: 'http://localhost:5000/enter',
-                    type: 'POST',
-                });
-                $("#main-send").val("");
-            };
-        })
-    });
-    $("#connect-stream").click(function () {
-        var content = $("#connect-input").val();
-        var data = {
-            data: JSON.stringify({
-                'text': content,
-            }),
-        };
-        $.ajax({
-            url: 'http://localhost:5000/remote',
-            type: 'POST',
-            data: data,
-            dataType: 'json',
+        }).fail(function () {
+            $('#status-badge').text('Error').removeClass('connected').addClass('disconnected');
         });
-        $("#remote").attr("src", 'http://127.0.0.1:' + $("#connect-input").val());
-    });
+    }
+    checkStatus();
+    setInterval(checkStatus, 10000);
+
+    // Button handlers
     $(".home").click(function () {
-        console.log('click home button')
-        $.ajax({
-            url: 'http://localhost:5000/home',
-            type: 'POST',
-        })
+        $.post('/home');
     });
     $(".lock").click(function () {
-        console.log('Press lock button')
-        $.ajax({
-            url: 'http://localhost:5000/lock',
-            type: 'POST',
-        })
-    });
-    $(".screenshot").click(function () {
-        console.log('click screenshot button')
-        $.ajax({
-            url: 'http://localhost:5000/screenshot',
-            type: 'POST',
-        })
-    });
-    $(".reboot").click(function () {
-        console.log('click reboot button')
-        $.ajax({
-            url: 'http://localhost:5000/reboot',
-            type: 'POST',
-        })
+        $.post('/lock');
     });
     $(".rotation").click(function () {
-        console.log('switch orientation')
-        $.ajax({
-            url: 'http://localhost:5000/rotation',
-            type: 'POST',
-        })
+        $.post('/rotation');
     });
-    $("#size-range").on('input propertychange', function () {
-        $('#remote').css({
-            'width': $('#size-range').val() + '%',
-            'height': $('#size-range').val() + '%'
+    $(".screenshot").click(function () {
+        $.post('/screenshot', function (data) {
+            alert('Screenshot saved: ' + data.path);
         });
-        $("#size-value").html("Source Size: " + $('#size-range').val() + '%');
-        console.log()
+    });
+
+    // Recording
+    $(".record").click(function () {
+        $.post('/recording/start', function (data) {
+            $('.record').hide();
+            $('.stop-record').show();
+        });
+    });
+    $(".stop-record").click(function () {
+        $.post('/recording/stop', function (data) {
+            $('.stop-record').hide();
+            $('.record').show();
+            alert('Recording saved');
+        });
+    });
+
+    // Check recording status on load
+    function checkRecordingStatus() {
+        $.getJSON('/status', function (data) {
+            if (data.recording) {
+                $('.record').hide();
+                $('.stop-record').show();
+            } else {
+                $('.stop-record').hide();
+                $('.record').show();
+            }
+        });
+    }
+    checkRecordingStatus();
+    $(".volume-up").click(function () {
+        $.post('/button', { data: JSON.stringify({ button: 'volume-up' }) });
+    });
+    $(".volume-down").click(function () {
+        $.post('/button', { data: JSON.stringify({ button: 'volume-down' }) });
+    });
+    $(".mute").click(function () {
+        $.post('/button', { data: JSON.stringify({ button: 'mute' }) });
+    });
+
+    // Send text
+    $("#main-send").keydown(function (e) {
+        if (e.keyCode === 13 && e.ctrlKey) {
+            e.preventDefault();
+            var content = $(this).val();
+            if (content) {
+                $.post('/send', { data: JSON.stringify({ text: content }) });
+                $(this).val("");
+            }
+        }
+    });
+
+    // Viewer size slider
+    $("#size-range").on('input', function () {
+        var val = $(this).val();
+        $('#viewer-frame').css('height', val + 'vh');
+        $("#size-value").text(val + "%");
     });
 };

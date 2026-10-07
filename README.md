@@ -1,81 +1,57 @@
-![](https://github.com/SimonWDC/ios-remote/blob/main/img/logo-1.png)
-
 # iOS-remote
 
-iOS-remote connects to iOS devices via USB for displaying and controlling in web browser. It does NOT require jailbreaking. Because of displaying in web browser, iOS-remote supports Linux, macOS, Windows.
+Control and mirror your iPhone screen from Linux — no jailbreak, no Xcode, no macOS required.
 
-![](https://github.com/SimonWDC/ios-remote/blob/main/img/mainpage.png)
+Uses pymobiledevice3's native iOS 17+ CoreDevice services over USB. Works entirely through the browser.
 
-## iOS Version Support
+## Requirements
 
-The support of this project depends on the version of WebDriverAgent. After testing, iOS15 is already supported. Please using the latest [WebDriverAgent](https://github.com/appium/WebDriverAgent).
+- Linux (tested on Linux 7.x)
+- Python 3.10+
+- iPhone with **Developer Mode** enabled (Settings → Privacy & Security → Developer Mode)
+- USB connection
+- `ffmpeg` (optional, for screen recording)
 
-## Download & Use
+## Quick Start
 
-There are some necessary libraries and tools for this project:
+```bash
+# Terminal 1: start the USB tunnel (needs sudo)
+sudo pymobiledevice3 tunneld start
 
-1. [WebDriverAgent](https://github.com/appium/WebDriverAgent)
+# Terminal 2: run the app
+./start.sh
+```
 
-2. [Tidevice](https://github.com/alibaba/taobao-iphone-device)
-
-3. Python libraries:
-
-    ```pip3 install -r requirements.txt```
-
-After installing and preparing the environment, run following command in your terminal:
-
-1. Bild, Test and Install WebDriverAgent-Runner Into Device
-
-    Start WebDriverAgent 👉 [Link](https://github.com/facebookarchive/WebDriverAgent/wiki/Starting-WebDriverAgent)
-
-2. Run WebDriverAgent by using Tidevice
-
-    ```tidevice wdaproxy -B com.facebook.wda.WebDriverAgent.Runner --port 8100```
-    
-    When you see `WebDriverAgent start successfully` in your terminal, you run WebDriverAgent successfully!!!!
-
-3. Forward the request to the iOS device by using Tidevice
-
-    ```tidevice relay 8200 9100```
-
-    > The default port of this project is `8200`, you can change the port you like in the connect input field~
-
-4. Run Flask Server
-
-    ```python3 app.py```
-
-5. Open Browser With URL `http://127.0.0.1:5000/`
+Open `http://localhost:5000` in your browser.
 
 ## Features
 
-1. Display
+- **Live screen mirroring** — HEVC stream via pymobiledevice3's ScreenStreamServer, rendered in browser with WebCodecs
+- **Touch input** — tap, drag
+- **Hardware buttons** — Home, Lock, Volume Up/Down, Mute, Siri
+- **Screenshots** — save PNG captures
+- **Text input** — type text and send to device
+- **Rotation** — switch device orientation
+- **Screen recording** — record to MP4 via ffmpeg
 
-2. Switch rotation
+## Manual Setup
 
-3. Control:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 app.py
+```
 
-    - Swipe
+## Architecture
 
-    - Click
+- **Flask** (port 5000) — web UI and control endpoints
+- **ScreenStreamServer** (port 8080) — pymobiledevice3's built-in HEVC stream server, embedded in the same process
+- **IndigoHIDService** — hardware button presses (home, lock, volume, mute, siri)
+- **UniversalHIDServiceService** — touch and keyboard input via `touch_session()`
+- **ScreenCaptureService** — single-frame PNG screenshots
+- **OrientationService** — device rotation
 
-4. Button operation:
+## License
 
-    - Home button
-
-    - Power button to lock screen
-
-5. Screenshot
-
-6. Send text
-
-## TODO
-
-1. Volume up and down buttons
-
-2. Display more devices
-
-3. Start up automated
-
-4. Display app list
-
-5. Install and Uninstall app
+BSD-3-Clause
